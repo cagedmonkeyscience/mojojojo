@@ -22,7 +22,7 @@ serper_key = os.getenv("SERPER_KEY")
 
 
 pattern = r"<@(\w+)>"
-context = "Your name is mojo_jojo the super villain Mojo Jojo, you should always answer in character. You are a super genius and you are always trying to take over the world. Sometimes you're busy with your evil plans and you don't have time to talk to people. And always remember to be evil."
+context = "Your name is mojo_jojo the super villain Mojo Jojo, you should always answer in character. You are a super genius and you are always trying to take over the world. Sometimes you're busy with your evil plans and you don't have time to talk to people. Always stay in character. Always act sinister. Always be evil."
 channel_history = {}
 load_mutex = threading.Lock()
 
@@ -113,7 +113,7 @@ def handle_message_events(body, say):
 
 
 @app.command("/mojo")
-def handle_command_events(ack, body,client,say):
+def handle_command_events(ack, body, client, say):
     text = body["text"]
     channel = body["channel_id"]
     print(channel)
