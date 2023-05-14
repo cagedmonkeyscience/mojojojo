@@ -124,13 +124,13 @@ def handle_command_events(ack, body,client):
     elif str.startswith(text, "debug"):
         if channel in channel_history:
             resp = client.chat_postMessage(channel=channel,
-                text="chat history:",
+                text="mojo_jojo debug",
                 blocks= [
                     {
                         "type": "section",
                         "text": {
                             "type": "plain_text",
-                            "text": "chat history:",
+                            "text": "Adding message history to 🧵 for debugging",
                             "emoji": True
                         }
                     }
@@ -139,7 +139,7 @@ def handle_command_events(ack, body,client):
             for message in channel_history[channel]:
                 m = json.dumps(message, indent=2)
                 client.chat_postMessage(channel=channel,
-                    text= "message",
+                    text= "mojo_jojo debug",
                     blocks= [
                         {
                             "type": "section",
@@ -197,7 +197,7 @@ def add_channel_message(channel, user, text):
 
         load_channel_history(channel)
 
-    if text == f'<@{bot_user_id}>':
+    if text == f'<@{bot_user_id}>' or text == f'mojo_jojo debug':
         return
 
     uids = re.findall(pattern, text)
