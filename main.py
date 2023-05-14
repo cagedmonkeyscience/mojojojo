@@ -7,6 +7,13 @@ import json
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
+from flask import Flask, jsonify
+
+fapp = Flask(__name__)
+@fapp.route('/health', methods=['GET'])
+def health_check():
+    return jsonify(status='ok')
+
 # Confif
 openai.organization = "org-tx7KIAdEzHGdEcrcIzHAHOYs"
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -228,9 +235,20 @@ def getResponse(channel):
 
     return text
 
+def start_flask():
+    fapp.run(port=8080)
 
+def start_slack():
+    SocketModeHandler(app, app_token).start()
 
 # Start your app
 if __name__ == "__main__":
     load_users()
-    SocketModeHandler(app, app_token).start()
+
+    flask_thread = threading.Thread(target=start_flask)
+    slack_thread = threading.Thread(target=start_slack)
+    flask_thread.start()
+    slack_thread.start()
+    flask_thread.join()
+    slack_thread.join()
+
