@@ -9,11 +9,6 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from flask import Flask, jsonify
 
-fapp = Flask(__name__)
-@fapp.route('/health', methods=['GET'])
-def health_check():
-    return jsonify(status='ok')
-
 # Confif
 openai.organization = "org-tx7KIAdEzHGdEcrcIzHAHOYs"
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -21,7 +16,7 @@ bot_token = os.getenv("SLACK_BOT_TOKEN")
 user_token = os.getenv("SLACK_USER_TOKEN")
 app_token = os.getenv("SLACK_APP_TOKEN")
 secret = os.getenv("SLACK_BOT_SECRET")
-
+serper_key = os.getenv("SERPER_KEY")
 
 
 
@@ -31,7 +26,7 @@ context = "Your name is mojo_jojo the super villain Mojo Jojo, you should always
 channel_history = {}
 load_mutex = threading.Lock()
 
-history_limit = 50
+history_limit =10
 users = {}
 
 # Initialize your Bolt app with your app's token and signing secret
@@ -110,40 +105,52 @@ def handle_message_events(body, say):
     text = event["text"]
     user = event["user"]
     channel = event["channel"]
-    return add_channel_message(channel, user, text)
+    if "thread_ts" not in event:
+        add_channel_message(channel, user, text)
+    else:
+        print("thread message")
 
 
 
 @app.command("/mojo")
-def handle_command_events(ack, body, say):
-
+def handle_command_events(ack, body,client):
     text = body["text"]
-
+    channel = body["channel_id"]
+    print(channel)
     if str.startswith(text, "say"):
         say(text[4:])
     elif str.startswith(text, "config"):
         say(get_config_message())
     elif str.startswith(text, "debug"):
-        jsonHistory = json.dumps(history, indent=2)
-        say({
-            "blocks": [
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "chat history:",
-                        "emoji": True
+        if channel in channel_history:
+            resp = client.chat_postMessage(channel=channel,
+                text="chat history:",
+                blocks= [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "chat history:",
+                            "emoji": True
+                        }
                     }
-                },
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "```"+jsonHistory+"```",
-                    }
-                }
-            ]
-        })
+                ]
+            )
+            for message in channel_history[channel]:
+                m = json.dumps(message, indent=2)
+                client.chat_postMessage(channel=channel,
+                    text= "message",
+                    blocks= [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": "```"+m+"```",
+                            }
+                        }
+                    ]
+                ,thread_ts=resp["ts"])
+            print(resp)
     ack()
 
 @app.action("update_config-action")
@@ -180,7 +187,7 @@ def load_channel_history(channel):
         for message in response["messages"]:
             user = message["user"]
             text = message["text"]
-            add_channel_message(channel,user, text)
+            add_channel_message(channel, user, text)
     finally:
         print(f"Loading channel history completed for {channel}")
         load_mutex.release()
@@ -190,7 +197,7 @@ def add_channel_message(channel, user, text):
 
         load_channel_history(channel)
 
-    if text == f'<@{bot_user_id}>' or user == bot_user_id:
+    if text == f'<@{bot_user_id}>':
         return
 
     uids = re.findall(pattern, text)
@@ -200,7 +207,7 @@ def add_channel_message(channel, user, text):
     message = {
         "name": users[user],
         "role":   "user" if user != bot_user_id else "assistant",
-        "content": f"{users[user]}: {text}",
+        "content": f"{users[user]}: {text}" if user != bot_user_id else text,
     }
 
     channel_history[channel].append(message)
@@ -219,14 +226,11 @@ def getResponse(channel):
 
     print("Channel history:" ,len(channel_history[channel]))
 
-    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages+channel_history[channel], max_tokens=512)
+    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages+channel_history[channel]+messages, max_tokens=512)
 
     text = openai_response["choices"][0]["message"]["content"]
 
-    response = openai_response["choices"][0]["message"]
-    response["name"] = "mojo_jojo"
-    response["content"] = "mojo_jojo: "+response["content"]
-    channel_history[channel].append(response)
+    add_channel_message(channel, bot_user_id, text)
 
     print(f"Response: {text}")
 
@@ -235,11 +239,19 @@ def getResponse(channel):
 
     return text
 
-def start_flask():
-    fapp.run(port=8080,host="0.0.0.0")
 
 def start_slack():
     SocketModeHandler(app, app_token).start()
+
+
+fapp = Flask(__name__)
+@fapp.route('/health', methods=['GET'])
+def health_check():
+    return jsonify(status='ok')
+
+def start_flask():
+    fapp.run(port=8080,host="0.0.0.0")
+
 
 # Start your app
 if __name__ == "__main__":
