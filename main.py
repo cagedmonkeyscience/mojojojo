@@ -236,7 +236,7 @@ def getResponse(channel):
     return text
 
 def start_flask():
-    fapp.run(port=8080)
+    fapp.run(port=8080,host="0.0.0.0")
 
 def start_slack():
     SocketModeHandler(app, app_token).start()
