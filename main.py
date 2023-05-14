@@ -113,7 +113,7 @@ def handle_message_events(body, say):
 
 
 @app.command("/mojo")
-def handle_command_events(ack, body,client):
+def handle_command_events(ack, body,client,say):
     text = body["text"]
     channel = body["channel_id"]
     print(channel)
