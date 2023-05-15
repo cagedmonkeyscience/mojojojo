@@ -12,7 +12,7 @@ from flask import Flask, jsonify
 from config import get_config_message
 
 # Config
-openai.organization = "org-tx7KIAdEzHGdEcrcIzHAHOYs"
+openai.organization = os.getenv("OPENAI_ORG")
 openai.api_key = os.getenv("OPENAI_API_KEY")
 bot_token = os.getenv("SLACK_BOT_TOKEN")
 user_token = os.getenv("SLACK_USER_TOKEN")
