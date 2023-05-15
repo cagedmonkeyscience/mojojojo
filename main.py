@@ -9,7 +9,9 @@ from slack_bolt.adapter.socket_mode import SocketModeHandler
 
 from flask import Flask, jsonify
 
-# Confif
+from config import get_config_message
+
+# Config
 openai.organization = "org-tx7KIAdEzHGdEcrcIzHAHOYs"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 bot_token = os.getenv("SLACK_BOT_TOKEN")
@@ -22,7 +24,15 @@ serper_key = os.getenv("SERPER_KEY")
 
 
 pattern = r"<@(\w+)>"
-context = "Your name is mojo_jojo the super villain Mojo Jojo, you should always answer in character. You are a super genius and you are always trying to take over the world. Sometimes you're busy with your evil plans and you don't have time to talk to people. Always stay in character. Always act sinister. Always be evil."
+start_prompt = """
+Your name is mojo_jojo. You are Mojo Jojo, a super villain trying to take over the world.
+You are a super genius and you are always trying to take over the world.
+Sometimes you're busy with your evil plans and you don't have time to talk to people.
+Always respond in a fun sinister way talking about your evil plans and how little time you have to help mortals.
+"""
+end_prompt = """
+And respond in a funny, but sinister way.
+"""
 channel_history = {}
 load_mutex = threading.Lock()
 
@@ -34,63 +44,7 @@ app = App(token=bot_token, signing_secret=secret,)
 bot_user_id = app.client.auth_test().get("user_id")
 
 
-def get_config_message():
-    return {
-        "text": "Mojo Jojo config",
-        "blocks": [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Mojo Jojo config",
-                    "emoji": True
-                }
-            },
-            {
-                "type": "input",
-                "block_id": "context_message",
-                "element": {
-                    "type": "plain_text_input",
-                    "multiline": True,
-                    "initial_value": context,
-                    "action_id": "context_message-action"
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Context Message"
-                }
-            },
-            {
-                "type": "input",
-                "block_id": "context_limit",
-                "element": {
-                    "type": "plain_text_input",
-                    "initial_value": str(history_limit),
-                    "action_id": "context_limit-action"
-                },
-                "label": {
-                    "type": "plain_text",
-                    "text": "Number of message to keep in context",
-                    "emoji": True
-                }
-            },
-            {
-                "type": "actions",
-                "elements": [
-                    {
-                        "type": "button",
-                        "text": {
-                            "type": "plain_text",
-                            "text": "Update",
-                            "emoji": True
-                        },
-                        "value": "click_me_123",
-                        "action_id": "update_config-action"
-                    }
-                ]
-            }
-        ]
-    }
+
 
 @app.event("app_mention")
 def handle_mention(body, say):
@@ -114,13 +68,14 @@ def handle_message_events(body, say):
 
 @app.command("/mojo")
 def handle_command_events(ack, body, client, say):
+    ack()
     text = body["text"]
     channel = body["channel_id"]
     print(channel)
     if str.startswith(text, "say"):
         say(text[4:])
     elif str.startswith(text, "config"):
-        say(get_config_message())
+        say(get_config_message(start_prompt, end_prompt, history_limit))
     elif str.startswith(text, "debug"):
         if channel in channel_history:
             resp = client.chat_postMessage(channel=channel,
@@ -136,6 +91,30 @@ def handle_command_events(ack, body, client, say):
                     }
                 ]
             )
+            client.chat_postMessage(channel=channel,
+                text= "mojo_jojo debug",
+                blocks= [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "```"+start_prompt+"```",
+                        }
+                    }
+                ]
+            ,thread_ts=resp["ts"])
+            client.chat_postMessage(channel=channel,
+                text= "mojo_jojo debug",
+                blocks= [
+                    {
+                        "type": "section",
+                        "text": {
+                            "type": "mrkdwn",
+                            "text": "```"+end_prompt+"```",
+                        }
+                    }
+                ]
+            ,thread_ts=resp["ts"])
             for message in channel_history[channel]:
                 m = json.dumps(message, indent=2)
                 client.chat_postMessage(channel=channel,
@@ -151,7 +130,6 @@ def handle_command_events(ack, body, client, say):
                     ]
                 ,thread_ts=resp["ts"])
             print(resp)
-    ack()
 
 @app.action("update_config-action")
 def handle_action_events(ack, body, client):
@@ -161,8 +139,10 @@ def handle_action_events(ack, body, client):
         channel=channel,
         ts=message
     )
-    global context
-    context = body["state"]["values"]["context_message"]["context_message-action"]["value"]
+    global start_prompt
+    start_prompt = body["state"]["values"]["start_prompt"]["start_prompt-action"]["value"]
+    global end_prompt
+    end_prompt = body["state"]["values"]["end_prompt"]["end_prompt-action"]["value"]
     global history_limit
     history_limit= int(body["state"]["values"]["context_limit"]["context_limit-action"]["value"])
     ack()
@@ -216,9 +196,14 @@ def add_channel_message(channel, user, text):
         channel_history[channel].pop(0)
 
 def getResponse(channel):
-    messages = [{
+    start_messages = [{
         "role": "system",
-        "content": context,
+        "content": start_prompt,
+        "name": "mojo_jojo",
+    }]
+    end_messages = [{
+        "role": "system",
+        "content": start_prompt,
         "name": "mojo_jojo",
     }]
 
@@ -226,7 +211,7 @@ def getResponse(channel):
 
     print("Channel history:" ,len(channel_history[channel]))
 
-    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messages+channel_history[channel]+messages, max_tokens=512)
+    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=start_messages+channel_history[channel]+end_messages, max_tokens=512)
 
     text = openai_response["choices"][0]["message"]["content"]
 
