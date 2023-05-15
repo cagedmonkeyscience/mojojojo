@@ -201,13 +201,13 @@ def add_channel_message(channel, user, text):
 
 def getResponse(channel):
     start_messages = [{
-        "role": "system",
+        "role": "user",
         "content": start_prompt,
         "name": "mojo_jojo",
     }]
     end_messages = [{
         "role": "system",
-        "content": start_prompt,
+        "content": end_prompt,
         "name": "mojo_jojo",
     }]
 
