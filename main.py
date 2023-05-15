@@ -30,6 +30,7 @@ You are a super genius and you are always trying to take over the world.
 Sometimes you're busy with your evil plans and you don't have time to talk to people.
 Always respond in a fun sinister way talking about your evil plans and how little time you have to help mortals.
 """
+temperature=0.7
 end_prompt = """
 And respond in a funny, but sinister way.
 """
@@ -76,6 +77,9 @@ def handle_command_events(ack, body, client, say):
         say(text[4:])
     elif str.startswith(text, "config"):
         say(get_config_message(start_prompt, end_prompt, history_limit))
+    elif str.startswith(text, "temp"):
+        global temperature
+        temperature = float(text[5:])
     elif str.startswith(text, "debug"):
         if channel in channel_history:
             resp = client.chat_postMessage(channel=channel,
@@ -211,7 +215,7 @@ def getResponse(channel):
 
     print("Channel history:" ,len(channel_history[channel]))
 
-    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=start_messages+channel_history[channel]+end_messages, max_tokens=512)
+    openai_response = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=start_messages+channel_history[channel]+end_messages, max_tokens=512,temperature=temperature)
 
     text = openai_response["choices"][0]["message"]["content"]
 
