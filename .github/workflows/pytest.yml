@@ -9,28 +9,18 @@ on:
       - main
 
 jobs:
-  build:
+  run:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.x
-
+          python-version: '3.10'
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Run tests with coverage
-        run: pytest --cov=myapp
-
-      - name: Install Codecov uploader
-        run: pip install codecov
-
-      - name: Upload coverage report to Codecov
-        run: codecov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Run tests and collect coverage
+        run: pytest --cov app
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
