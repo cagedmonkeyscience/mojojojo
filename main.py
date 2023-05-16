@@ -1,3 +1,28 @@
+# Logging
+import logging
+import logging.handlers
+
+
+# Configure the logger
+logger = logging.getLogger('mylogger')
+logger.setLevel(logging.INFO)
+
+# Create an instance of the SysLogHandler
+handler = logging.handlers.SysLogHandler()
+
+# Set the formatter for the log messages (optional)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
+# Send log messages
+logger.info('This is an info message.')
+logger.warning('This is a warning message.')
+logger.error('This is an error message.')
+
+
 import threading
 import os
 import openai
