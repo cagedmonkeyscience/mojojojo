@@ -80,3 +80,5 @@ class Config:
     @property
     def serper(self):
         return self._serper
+
+config = Config()
