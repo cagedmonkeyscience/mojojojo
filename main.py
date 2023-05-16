@@ -246,16 +246,18 @@ def getResponse(channel):
 
 
 # Initialize FastAPI app and Slack Bolt app
-app = FastAPI()
+fapp = FastAPI()
 
 # Define a FastAPI route for the health check
-@app.get("/health")
+@fapp.get("/health")
 def health_check():
     return {"status": "ok"}
 
 # Start the FastAPI application and SocketModeHandler for Slack Bolt
 if __name__ == "__main__":
     import threading
+
+    logging.error("Starting mojo_jojo")
 
     # Start the thread
     socket_mode = SocketModeHandler(app, config.slack.app_token)
@@ -264,6 +266,6 @@ if __name__ == "__main__":
 
     # Start the FastAPI application
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(fapp, host="0.0.0.0", port=8080)
 
     socket_mode.close()
