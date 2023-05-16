@@ -14,7 +14,7 @@ from config import get_config_message
 import openai
 
 # Configure the logging module
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG,format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 openai.api_key = config.openai.api_key
 openai.organization = config.openai.organization
