@@ -1,5 +1,5 @@
 from myapp.config import config
-
+import logging
 import threading
 import re
 import json
@@ -7,7 +7,7 @@ import json
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
-from flask import Flask, jsonify
+from fastapi import FastAPI
 
 from config import get_config_message
 
@@ -244,29 +244,26 @@ def getResponse(channel):
     return text
 
 
-def start_slack():
-    SocketModeHandler(app, config.slack.app_token).start()
 
+# Initialize FastAPI app and Slack Bolt app
+app = FastAPI()
 
-fapp = Flask(__name__)
-
-
-@fapp.route("/health", methods=["GET"])
+# Define a FastAPI route for the health check
+@app.get("/health")
 def health_check():
-    return jsonify(status="ok")
+    return {"status": "ok"}
 
-
-def start_flask():
-    fapp.run(port=8080, host="0.0.0.0")
-
-
-# Start your app
+# Start the FastAPI application and SocketModeHandler for Slack Bolt
 if __name__ == "__main__":
-    load_users()
+    import threading
 
-    flask_thread = threading.Thread(target=start_flask)
-    slack_thread = threading.Thread(target=start_slack)
-    flask_thread.start()
-    slack_thread.start()
-    flask_thread.join()
-    slack_thread.join()
+    # Start the thread
+    socket_mode = SocketModeHandler(app, config.slack.app_token)
+    socket_mode_thread = threading.Thread(target=socket_mode.start)
+    socket_mode_thread.start()
+
+    # Start the FastAPI application
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
+
+    socket_mode.close()
