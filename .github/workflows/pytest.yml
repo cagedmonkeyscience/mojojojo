@@ -1,4 +1,4 @@
-name: Run pytest with coverage
+name: Run tests and coverage
 
 on:
   push:
@@ -10,26 +10,27 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
 
-    - name: Install dependencies
-      run: pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-    - name: Run pytest with coverage
-      run: pytest --cov=myapp
+      - name: Run tests with coverage
+        run: pytest --cov=myapp
 
-    - name: Upload coverage report
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage-report
-        path: ./htmlcov
+      - name: Install Codecov uploader
+        run: pip install codecov
+
+      - name: Upload coverage report to Codecov
+        run: codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
