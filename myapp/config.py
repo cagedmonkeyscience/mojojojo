@@ -1,7 +1,7 @@
 import os
 
 
-class OpenAI:
+class OpenAIConfig:
     """OpenAI class for storing the OpenAI environment variables"""
 
     def __init__(self):
@@ -17,7 +17,7 @@ class OpenAI:
         return self._api_key
 
 
-class Slack:
+class SlackConfig:
     """Slack class for storing the Slack environment variables"""
 
     def __init__(self):
@@ -43,7 +43,7 @@ class Slack:
         return self._signing_secret
 
 
-class Serper:
+class SerperConfig:
     """Serper class for storing the Serper environment variables""" ""
 
     def __init__(self):
@@ -65,9 +65,9 @@ class Config:
         return cls._instance
 
     def __init__(self):
-        self._openai = OpenAI()
-        self._slack = Slack()
-        self._serper = Serper()
+        self._openai = OpenAIConfig()
+        self._slack = SlackConfig()
+        self._serper = SerperConfig()
 
     @property
     def openai(self):
@@ -80,5 +80,3 @@ class Config:
     @property
     def serper(self):
         return self._serper
-
-
