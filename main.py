@@ -53,7 +53,11 @@ def handle_mention(body, say):
 
 @app.event("message")
 def handle_message_events(body, say):
+    if "event" not in body:
+        return
     event = body["event"]
+    if "text" not in event:
+        return
     text = event["text"]
     user = event["user"]
     channel = event["channel"]
@@ -260,6 +264,7 @@ def health_check():
 # Start the FastAPI application and SocketModeHandler for Slack Bolt
 if __name__ == "__main__":
     load_users()
+
     import threading
 
     logging.error("Starting mojo_jojo")
