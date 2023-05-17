@@ -259,6 +259,7 @@ def health_check():
 
 # Start the FastAPI application and SocketModeHandler for Slack Bolt
 if __name__ == "__main__":
+    load_users()
     import threading
 
     logging.error("Starting mojo_jojo")
